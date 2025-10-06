@@ -158,4 +158,9 @@ class RepresentadoController extends Controller
         return redirect()->route('representados.index')
             ->with('success', 'Representado eliminado exitosamente.');
     }
+    public function adminIndex()
+{
+    $representados = Representado::with('user')->latest()->paginate(10);
+    return view('admin.representados.index', compact('representados'));
+}
 }

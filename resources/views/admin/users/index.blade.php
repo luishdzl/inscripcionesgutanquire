@@ -1,54 +1,30 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Panel de Administración') }}
+            {{ __('Gestión de Usuarios') }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Estadísticas -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-blue-500">
-                    <h3 class="text-lg font-semibold text-gray-800">Total Representantes</h3>
-                    <p class="text-3xl font-bold text-blue-600">{{ \App\Models\User::where('role', 'user')->count() }}</p>
-                </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-green-500">
-                    <h3 class="text-lg font-semibold text-gray-800">Total Representados</h3>
-                    <p class="text-3xl font-bold text-green-600">{{ \App\Models\Representado::count() }}</p>
-                </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-purple-500">
-                    <h3 class="text-lg font-semibold text-gray-800">Usuarios Registrados</h3>
-                    <p class="text-3xl font-bold text-purple-600">{{ \App\Models\User::count() }}</p>
-                </div>
-            </div>
-
-            <!-- Botones de gestionar -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <a href="{{ route('admin.users.index') }}" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-black font-bold py-4 px-6 rounded-lg text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out border border-blue-400">
-                    <div class="flex items-center justify-center">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0.99 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4.354a4 4 0 100.1 .09M15 21H2v-1a6 6 0 0112 0v1zm0 0h9v-1a6 8 0 00-10-.39m7.562-9a2.5 2.5 0 11-5 0 2.5 2.54 0 015 0z"></path>
-                        </svg>
-                        Gestionar Usuarios
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.representados.index') }}" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-bold py-4 px-6 rounded-lg text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out border border-green-400">
-                    <div class="flex items-center justify-center">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        Gestionar Representados
-                    </div>
-                </a>
-            </div>
-
-            <!-- Lista de Representantes -->
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-4">Todos los Representantes</h3>
-                    
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold">Todos los Usuarios</h3>
+                    </div>
+
+                    @if(session('success'))
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -66,10 +42,16 @@
                                         Teléfono
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Rol
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Representados
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Perfil Completo
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Acciones
                                     </th>
                                 </tr>
                             </thead>
@@ -91,12 +73,13 @@
                                         {{ $user->telefono ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @foreach($user->representados as $representado)
-                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-1 mr-1">
-                                            {{ $representado->nombres }}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
+                                            {{ $user->role === 'admin' ? 'Administrador' : 'Usuario' }}
                                         </span>
-                                        @endforeach
-                                        <span class="text-xs text-gray-500">{{ $user->representados_count }} representado(s)</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-gray-900">{{ $user->representados_count }} representado(s)</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($user->perfil_completo)
@@ -109,16 +92,30 @@
                                         </span>
                                         @endif
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+                                        @if($user->id !== auth()->id())
+                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('¿Estás seguro de eliminar este usuario? Se eliminarán todos sus representados.')">Eliminar</button>
+                                        </form>
+                                        @endif
+                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                                        No hay representantes registrados.
+                                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                                        No hay usuarios registrados.
                                     </td>
                                 </tr>
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="mt-4">
+                        {{ $users->links() }}
                     </div>
                 </div>
             </div>
