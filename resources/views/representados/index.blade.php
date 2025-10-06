@@ -4,7 +4,30 @@
             {{ __('Representados Registrados') }}
         </h2>
     </x-slot>
+<!-- Agregar esto después del título y antes de la tabla -->
+<div class="mb-6">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <input type="text" id="search-representados" placeholder="Buscar por nombre, CI, nivel académico..." 
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+        </div>
+        <div class="w-full md:w-64">
+            <select id="filter-nivel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Todos los niveles</option>
+                <option value="Preescolar">Preescolar</option>
+                <option value="Primaria">Primaria</option>
+                <option value="Secundaria">Secundaria</option>
+                <option value="Bachillerato">Bachillerato</option>
+                <option value="Universitario">Universitario</option>
+            </select>
+        </div>
+    </div>
+</div>
 
+<!-- Cambiar la tabla para que esté en un contenedor -->
+<div id="representados-table-container">
+    <!-- La tabla existente aquí -->
+</div>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">

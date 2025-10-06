@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepresentadoController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -15,10 +16,10 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    // Dashboard principal
-    Route::get('/dashboard', function () {
+    // Dashboard principal - CORREGIDO
+    Route::get('/dashboard', function (Request $request) {
         if (auth()->user()->role === 'admin') {
-            return app()->make(AdminController::class)->dashboard();
+            return app()->make(AdminController::class)->dashboard($request);
         }
         return view('dashboard');
     })->name('dashboard');

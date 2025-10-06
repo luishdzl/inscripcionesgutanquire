@@ -8,14 +8,44 @@ use Illuminate\Support\Facades\Auth;
 
 class RepresentadoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (Auth::user()->role === 'admin') {
-            $representados = Representado::with('user')->latest()->paginate(10);
+            $query = Representado::with('user');
         } else {
-            $representados = Auth::user()->representados()->latest()->paginate(10);
+            $query = Auth::user()->representados();
         }
-        
+
+        // Búsqueda
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nombres', 'like', "%{$search}%")
+                  ->orWhere('apellidos', 'like', "%{$search}%")
+                  ->orWhere('ci', 'like', "%{$search}%")
+                  ->orWhere('nivel_academico', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('nombres', 'like', "%{$search}%")
+                        ->orWhere('apellidos', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filtro por nivel académico
+        if ($request->has('nivel_academico') && !empty($request->nivel_academico)) {
+            $query->where('nivel_academico', $request->nivel_academico);
+        }
+
+        $representados = $query->latest()->paginate(10);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'representados' => $representados,
+                'html' => view('representados.partials.representados_table', compact('representados'))->render(),
+                'pagination' => (string) $representados->links()
+            ]);
+        }
+
         return view('representados.index', compact('representados'));
     }
 
@@ -158,9 +188,41 @@ class RepresentadoController extends Controller
         return redirect()->route('representados.index')
             ->with('success', 'Representado eliminado exitosamente.');
     }
-    public function adminIndex()
-{
-    $representados = Representado::with('user')->latest()->paginate(10);
-    return view('admin.representados.index', compact('representados'));
-}
+    public function adminIndex(Request $request)
+    {
+        $query = Representado::with('user');
+
+        // Búsqueda
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nombres', 'like', "%{$search}%")
+                  ->orWhere('apellidos', 'like', "%{$search}%")
+                  ->orWhere('ci', 'like', "%{$search}%")
+                  ->orWhere('nivel_academico', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('nombres', 'like', "%{$search}%")
+                        ->orWhere('apellidos', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filtro por nivel académico
+        if ($request->has('nivel_academico') && !empty($request->nivel_academico)) {
+            $query->where('nivel_academico', $request->nivel_academico);
+        }
+
+        $representados = $query->latest()->paginate(10);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'representados' => $representados,
+                'html' => view('admin.representados.partials.representados_table', compact('representados'))->render(),
+                'pagination' => (string) $representados->links()
+            ]);
+        }
+
+        return view('admin.representados.index', compact('representados'));
+    }
 }

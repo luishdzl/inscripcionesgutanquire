@@ -14,95 +14,32 @@
                     </div>
 
                     @if(session('success'))
-                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4" id="success-message">
                             {{ session('success') }}
                         </div>
                     @endif
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Foto
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nombres
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        CI
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nivel Académico
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Representante
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($representados as $representado)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($representado->foto)
-                                            <img src="{{ asset('storage/' . $representado->foto) }}" alt="Foto" class="w-12 h-12 rounded-full object-cover">
-                                        @else
-                                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                </svg>
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $representado->nombres }} {{ $representado->apellidos }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $representado->fecha_nacimiento->format('d/m/Y') }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $representado->ci ?? 'N/A' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            {{ $representado->nivel_academico }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $representado->user->nombre_completo }}</div>
-                                        <div class="text-sm text-gray-500">{{ $representado->user->email }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button type="button" 
-                                                onclick="abrirModalEdicion({{ $representado->id }})"
-                                                class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                            Editar
-                                        </button>
-                                        <form action="{{ route('representados.destroy', $representado->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('¿Estás seguro de eliminar este representado?')">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                                        No hay representados registrados.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <!-- Filtros y Búsqueda -->
+                    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <input type="text" id="search-representados" placeholder="Buscar por nombre, CI, nivel académico, representante..." 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                        <div>
+                            <select id="filter-nivel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Todos los niveles</option>
+                                <option value="Preescolar">Preescolar</option>
+                                <option value="Primaria">Primaria</option>
+                                <option value="Secundaria">Secundaria</option>
+                                <option value="Bachillerato">Bachillerato</option>
+                                <option value="Universitario">Universitario</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="mt-4">
-                        {{ $representados->links() }}
+                    <!-- Tabla de representados -->
+                    <div id="representados-table-container">
+                        @include('admin.representados.partials.representados_table', ['representados' => $representados])
                     </div>
                 </div>
             </div>
@@ -110,5 +47,70 @@
     </div>
 
     <!-- Incluir el mismo modal de edición que en representados/index.blade.php -->
-    @include('representados.edit-modal')
+    @include('representados.partials.edit-modal')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-representados');
+            const nivelFilter = document.getElementById('filter-nivel');
+            
+            let searchTimeout;
+
+            function loadRepresentados(page = 1) {
+                const searchTerm = searchInput.value;
+                const nivel = nivelFilter.value;
+                
+                const url = new URL('{{ route('admin.representados.index') }}');
+                url.searchParams.set('page', page);
+                if (searchTerm) url.searchParams.set('search', searchTerm);
+                if (nivel) url.searchParams.set('nivel_academico', nivel);
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('representados-table-container').innerHTML = data.html;
+                    
+                    // Re-attach event listeners to new pagination links
+                    attachPaginationListeners();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+            function attachPaginationListeners() {
+                document.querySelectorAll('.pagination a').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const url = new URL(this.href);
+                        const page = url.searchParams.get('page');
+                        loadRepresentados(page);
+                    });
+                });
+            }
+
+            function performSearch() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    loadRepresentados(1);
+                }, 500);
+            }
+
+            searchInput.addEventListener('input', performSearch);
+            nivelFilter.addEventListener('change', () => loadRepresentados(1));
+
+            // Initial attachment of pagination listeners
+            attachPaginationListeners();
+
+            // Auto-hide success message
+            setTimeout(() => {
+                const successMsg = document.getElementById('success-message');
+                if (successMsg) successMsg.style.display = 'none';
+            }, 5000);
+        });
+    </script>
 </x-app-layout>

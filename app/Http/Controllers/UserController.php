@@ -8,16 +8,56 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('representados')
-                    ->withCount('representados')
-                    ->latest()
-                    ->paginate(10);
-                    
+        $query = User::with('representados')->withCount('representados');
+
+        // Búsqueda
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('ci', 'like', "%{$search}%")
+                  ->orWhere('nombres', 'like', "%{$search}%")
+                  ->orWhere('apellidos', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telefono', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro por rol
+        if ($request->has('role') && !empty($request->role)) {
+            $query->where('role', $request->role);
+        }
+
+        // Filtro por perfil completo
+        if ($request->has('perfil_completo') && $request->perfil_completo !== '') {
+            if ($request->perfil_completo == 1) {
+                $query->whereNotNull('ci')
+                      ->whereNotNull('nombres')
+                      ->whereNotNull('apellidos')
+                      ->whereNotNull('telefono')
+                      ->whereNotNull('direccion');
+            } else {
+                $query->whereNull('ci')
+                      ->orWhereNull('nombres')
+                      ->orWhereNull('apellidos')
+                      ->orWhereNull('telefono')
+                      ->orWhereNull('direccion');
+            }
+        }
+
+        $users = $query->latest()->paginate(10);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'users' => $users,
+                'html' => view('admin.users.partials.users_table', compact('users'))->render(),
+                'pagination' => (string) $users->links()
+            ]);
+        }
+
         return view('admin.users.index', compact('users'));
     }
-
     public function edit(User $user)
     {
         return view('admin.users.edit', compact('user'));
