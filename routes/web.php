@@ -6,6 +6,7 @@ use App\Http\Controllers\RepresentadoController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -40,6 +41,10 @@ Route::middleware(['auth'])->group(function () {
         
         // Los administradores pueden gestionar todos los representados
         Route::get('/admin/representados', [RepresentadoController::class, 'adminIndex'])->name('admin.representados.index');
+
+        // Reportes
+        Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+        Route::post('/admin/reports/generate', [ReportController::class, 'generate'])->name('admin.reports.generate');
     });
 
     // Representados - rutas para USUARIOS NORMALES
