@@ -6,7 +6,7 @@ use App\Models\Representado;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -20,36 +20,41 @@ class ReportController extends Controller
         $request->validate([
             'report_type' => 'required|in:representados,users,combined',
             'columns' => 'required|array|min:1',
-            'format' => 'required|in:csv,excel',
+            'format' => 'required|in:csv',
             'filters' => 'nullable|array',
         ]);
 
-        $columns = $request->columns;
-        $filters = $request->filters ?? [];
-        $reportType = $request->report_type;
-        $format = $request->format;
+        try {
+            $columns = $request->columns;
+            $filters = $request->filters ?? [];
+            $reportType = $request->report_type;
 
-        switch ($reportType) {
-            case 'representados':
-                $data = $this->generateRepresentadosReport($columns, $filters);
-                $filename = 'reporte_representados_' . date('Y-m-d_H-i-s');
-                break;
-            
-            case 'users':
-                $data = $this->generateUsersReport($columns, $filters);
-                $filename = 'reporte_usuarios_' . date('Y-m-d_H-i-s');
-                break;
-            
-            case 'combined':
-                $data = $this->generateCombinedReport($columns, $filters);
-                $filename = 'reporte_combinado_' . date('Y-m-d_H-i-s');
-                break;
-            
-            default:
-                return back()->with('error', 'Tipo de reporte no válido');
+            switch ($reportType) {
+                case 'representados':
+                    $data = $this->generateRepresentadosReport($columns, $filters);
+                    $filename = 'reporte_representados_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+                
+                case 'users':
+                    $data = $this->generateUsersReport($columns, $filters);
+                    $filename = 'reporte_usuarios_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+                
+                case 'combined':
+                    $data = $this->generateCombinedReport($columns, $filters);
+                    $filename = 'reporte_combinado_' . date('Y-m-d_H-i-s') . '.csv';
+                    break;
+                
+                default:
+                    return back()->with('error', 'Tipo de reporte no válido');
+            }
+
+            return $this->exportToCsv($data, $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error generando reporte: ' . $e->getMessage());
+            return back()->with('error', 'Error al generar el reporte: ' . $e->getMessage());
         }
-
-        return $this->exportToCsv($data, $filename . '.csv');
     }
 
     private function generateRepresentadosReport($columns, $filters)
@@ -123,7 +128,7 @@ class ReportController extends Controller
 
     private function generateUsersReport($columns, $filters)
     {
-        $query = User::with('representados')->withCount('representados');
+        $query = User::withCount('representados');
 
         // Aplicar filtros
         if (!empty($filters['role'])) {
@@ -138,11 +143,13 @@ class ReportController extends Controller
                       ->whereNotNull('telefono')
                       ->whereNotNull('direccion');
             } else {
-                $query->whereNull('ci')
+                $query->where(function($q) {
+                    $q->whereNull('ci')
                       ->orWhereNull('nombres')
                       ->orWhereNull('apellidos')
                       ->orWhereNull('telefono')
                       ->orWhereNull('direccion');
+                });
             }
         }
 
@@ -278,35 +285,35 @@ class ReportController extends Controller
             case 'representado_id':
                 return $representado->id;
             case 'representado_nombres':
-                return $representado->nombres;
+                return $this->escapeCsvValue($representado->nombres);
             case 'representado_apellidos':
-                return $representado->apellidos;
+                return $this->escapeCsvValue($representado->apellidos);
             case 'representado_ci':
-                return $representado->ci ?? 'N/A';
+                return $this->escapeCsvValue($representado->ci ?? 'N/A');
             case 'representado_fecha_nacimiento':
                 return $representado->fecha_nacimiento ? $representado->fecha_nacimiento->format('d/m/Y') : 'N/A';
             case 'representado_telefono':
-                return $representado->telefono ?? 'N/A';
+                return $this->escapeCsvValue($representado->telefono ?? 'N/A');
             case 'representado_direccion':
-                return $representado->direccion ?? 'N/A';
+                return $this->escapeCsvValue($representado->direccion ?? 'N/A');
             case 'representado_nivel_academico':
-                return $representado->nivel_academico;
+                return $this->escapeCsvValue($representado->nivel_academico);
             case 'representado_fecha_registro':
                 return $representado->created_at->format('d/m/Y H:i:s');
             case 'representante_id':
                 return $representado->user->id;
             case 'representante_nombres':
-                return $representado->user->nombres;
+                return $this->escapeCsvValue($representado->user->nombres);
             case 'representante_apellidos':
-                return $representado->user->apellidos;
+                return $this->escapeCsvValue($representado->user->apellidos);
             case 'representante_ci':
-                return $representado->user->ci ?? 'N/A';
+                return $this->escapeCsvValue($representado->user->ci ?? 'N/A');
             case 'representante_email':
-                return $representado->user->email;
+                return $this->escapeCsvValue($representado->user->email);
             case 'representante_telefono':
-                return $representado->user->telefono ?? 'N/A';
+                return $this->escapeCsvValue($representado->user->telefono ?? 'N/A');
             case 'representante_direccion':
-                return $representado->user->direccion ?? 'N/A';
+                return $this->escapeCsvValue($representado->user->direccion ?? 'N/A');
             case 'representante_fecha_registro':
                 return $representado->user->created_at->format('d/m/Y H:i:s');
             default:
@@ -320,17 +327,17 @@ class ReportController extends Controller
             case 'user_id':
                 return $user->id;
             case 'user_ci':
-                return $user->ci ?? 'N/A';
+                return $this->escapeCsvValue($user->ci ?? 'N/A');
             case 'user_nombres':
-                return $user->nombres;
+                return $this->escapeCsvValue($user->nombres);
             case 'user_apellidos':
-                return $user->apellidos;
+                return $this->escapeCsvValue($user->apellidos);
             case 'user_email':
-                return $user->email;
+                return $this->escapeCsvValue($user->email);
             case 'user_telefono':
-                return $user->telefono ?? 'N/A';
+                return $this->escapeCsvValue($user->telefono ?? 'N/A');
             case 'user_direccion':
-                return $user->direccion ?? 'N/A';
+                return $this->escapeCsvValue($user->direccion ?? 'N/A');
             case 'user_fecha_nacimiento':
                 return $user->fecha_nacimiento ? $user->fecha_nacimiento->format('d/m/Y') : 'N/A';
             case 'user_vive_con_representado':
@@ -348,34 +355,50 @@ class ReportController extends Controller
         }
     }
 
+    private function escapeCsvValue($value)
+    {
+        if ($value === null) {
+            return '';
+        }
+        
+        $value = (string) $value;
+        
+        // Si el valor contiene comas, comillas o saltos de línea, encerrar en comillas
+        if (preg_match('/[,"\n\r]/', $value)) {
+            $value = '"' . str_replace('"', '""', $value) . '"';
+        }
+        
+        return $value;
+    }
+
     private function exportToCsv($data, $filename)
     {
+        // Limpiar cualquier output anterior
+        if (ob_get_length()) {
+            ob_clean();
+        }
+
         $headers = [
             'Content-Type' => 'text/csv; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
         ];
 
         $callback = function() use ($data) {
             $file = fopen('php://output', 'w');
             
-            // Add BOM for UTF-8
+            // Add BOM for UTF-8 para Excel
             fwrite($file, "\xEF\xBB\xBF");
             
             foreach ($data as $row) {
-                // Ensure all values are properly formatted for CSV
-                $formattedRow = array_map(function($value) {
-                    // Escape values that contain commas, quotes, or newlines
-                    if (preg_match('/[,"\n]/', $value)) {
-                        $value = '"' . str_replace('"', '""', $value) . '"';
-                    }
-                    return $value;
-                }, $row);
-                
-                fputcsv($file, $formattedRow);
+                fputcsv($file, $row, ',', '"', "\\");
             }
+            
             fclose($file);
         };
 
-        return Response::stream($callback, 200, $headers);
+        return response()->stream($callback, 200, $headers);
     }
 }
